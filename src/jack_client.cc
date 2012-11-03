@@ -134,7 +134,7 @@ size_t JackClient::add_midi_out_port(string name)
 size_t JackClient::add_in_port(string name, const char* type)
 {
     jack_port_t* in_port = add_port(name.c_str(), type, JackPortIsInput);
-    output_ports.push_back(in_port);
+    input_ports.push_back(in_port);
 }
 size_t JackClient::add_out_port(string name, const char* type)
 {
