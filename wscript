@@ -19,6 +19,7 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_cxx unittest_gtest doxygen')
 
+    conf.env.CXXFLAGS = [ '-g']
     conf.define('VERSION', VERSION)
     conf.define('APPLICATION_NAME', APPLICATION_NAME)
 
@@ -31,9 +32,8 @@ def build(bld):
     
     SOURCES_PATTERN = 'src/**.cc'
     TESTS_PATTERN   = 'src/**/tests/**.cc'
-    MAINS_PATTERN   = 'src/main.cc'
 
-    # Compile library
+    # Build library
     bld.stlib(
         features    = 'cxx',
         source      = bld.path.ant_glob(SOURCES_PATTERN, excl=[TESTS_PATTERN]),
@@ -42,13 +42,24 @@ def build(bld):
         target      = APPLICATION_NAME
     )
 
-    # Compile tests
+    # Build simple_client example
+    bld.program(
+        features = 'cxx',
+        source   = bld.path.ant_glob('examples/simple_client/**.cc'),
+        includes = 'include .',
+        use      = 'JackClient',
+        target   = 'simple_client',
+    )
+
+    '''
+    # Build tests
     bld.program(
         features = 'gtest',
-        source   = bld.path.ant_glob([TESTS_PATTERN, SOURCES_PATTERN], excl=[MAINS_PATTERN]),
+        source   = bld.path.ant_glob([TESTS_PATTERN, SOURCES_PATTERN]),
         includes = './src/',
         target   = APPLICATION_NAME+'_test',
     )
+    '''
 
     # Generate documentation
     bld(features='doxygen', doxyfile='Doxyfile')

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "jackclient.h"
+#include "jack_client.h"
 
 //using namespace std;
 
@@ -13,6 +13,7 @@
 JackClient::JackClient(string name)
 {
     client_options = JackNullOption;
+    //client_state = not_active;
 
     // Initialize the JACK client
     if ((client = jack_client_open(name.c_str(), client_options, &client_status)) == NULL) {
@@ -62,7 +63,18 @@ int JackClient::jack_process_callback(jack_nframes_t nframes, void *arg)
 
 int JackClient::__process_callback(jack_nframes_t nframes)
 {
+    vector<jack_port_t*>::iterator it;
 
+    vector<void*> input_buffers;
+    vector<void*> output_buffers;
+
+    for ( it=input_ports.begin(); it < input_ports.end(); it++ )
+        input_buffers.push_back(jack_port_get_buffer(*it, nframes));
+
+    for ( it=output_ports.begin(); it < output_ports.end(); it++ )
+        output_buffers.push_back(jack_port_get_buffer(*it, nframes));
+
+    return process_callback(nframes, input_buffers, output_buffers);
 }
 
 /**
@@ -101,11 +113,65 @@ void JackClient::close()
     client_state = closed;
 }
 
+
+size_t JackClient::add_audio_in_port(string name)
+{
+    return add_in_port(name, JACK_DEFAULT_AUDIO_TYPE);
+}
+size_t JackClient::add_audio_out_port(string name)
+{
+    return add_out_port(name, JACK_DEFAULT_AUDIO_TYPE);
+}
+size_t JackClient::add_midi_in_port(string name)
+{
+    return add_in_port(name, JACK_DEFAULT_MIDI_TYPE);
+}
+size_t JackClient::add_midi_out_port(string name)
+{
+    return add_out_port(name, JACK_DEFAULT_MIDI_TYPE);
+}
+
+size_t JackClient::add_in_port(string name, const char* type)
+{
+    jack_port_t* in_port = add_port(name.c_str(), type, JackPortIsInput);
+    output_ports.push_back(in_port);
+}
+size_t JackClient::add_out_port(string name, const char* type)
+{
+    jack_port_t* out_port = add_port(name.c_str(), type, JackPortIsOutput);
+    output_ports.push_back(out_port);
+}
+
+jack_port_t* JackClient::add_port(string name, const char* type, unsigned long flags)
+{
+    if (client_state == active) {
+        throw runtime_error("You cannot add ports while the client is active.");
+    }
+    if (client_state == closed) {
+        throw runtime_error("You cannot add ports while the client is closed.");
+    }
+
+    jack_port_t* port;
+    if((port = jack_port_register(client, name.c_str(), type, flags, 0)) == NULL) {
+        string err_message = "Unable to register port: ";
+        err_message.append(name);
+        throw runtime_error(err_message);
+    }
+
+    return port;
+}
+
 string JackClient::get_name()
 {
     string name(jack_get_client_name(client));
     return name;
 }
+
+JackClient::jack_state_t JackClient::get_state()
+{
+    return client_state;
+}
+
 
 jack_nframes_t JackClient::get_sample_rate()
 {
