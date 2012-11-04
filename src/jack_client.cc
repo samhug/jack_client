@@ -13,7 +13,7 @@
 JackClient::JackClient(string name)
 {
     client_options = JackNullOption;
-    //client_state = not_active;
+    client_state = not_active;
 
     // Initialize the JACK client
     if ((client = jack_client_open(name.c_str(), client_options, &client_status)) == NULL) {
