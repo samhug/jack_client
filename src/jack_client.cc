@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <cassert>
 
 #include "jack_client.h"
 
@@ -63,16 +64,16 @@ int JackClient::jack_process_callback(jack_nframes_t nframes, void *arg)
 
 int JackClient::__process_callback(jack_nframes_t nframes)
 {
-    vector<jack_port_t*>::iterator it;
+    map<string,jack_port_t*>::iterator it;
 
     vector<void*> input_buffers;
     vector<void*> output_buffers;
 
-    for ( it=input_ports.begin(); it < input_ports.end(); it++ )
-        input_buffers.push_back(jack_port_get_buffer(*it, nframes));
+    for ( it=input_ports.begin(); it != input_ports.end(); it++ )
+        input_buffers.push_back(jack_port_get_buffer((*it).second, nframes));
 
-    for ( it=output_ports.begin(); it < output_ports.end(); it++ )
-        output_buffers.push_back(jack_port_get_buffer(*it, nframes));
+    for ( it=output_ports.begin(); it != output_ports.end(); it++ )
+        output_buffers.push_back(jack_port_get_buffer((*it).second, nframes));
 
     return process_callback(nframes, input_buffers, output_buffers);
 }
@@ -82,6 +83,8 @@ int JackClient::__process_callback(jack_nframes_t nframes)
  */
 void JackClient::start()
 {
+    assert(client_state == not_active);
+
     if (jack_activate(client) != 0) {
         throw runtime_error("Unable to activate JACK client");
     }
@@ -94,6 +97,8 @@ void JackClient::start()
  */
 void JackClient::stop()
 {
+    assert(client_state == active);
+
     if (jack_deactivate(client) != 0) {
         throw runtime_error("Unable to deactivate JACK client");
     }
@@ -106,6 +111,22 @@ void JackClient::stop()
  */
 void JackClient::close()
 {
+    assert(client_state != closed);
+
+    // If the client is running stop it
+    if (client_state == active) {
+        stop();
+    }
+
+    // Unregister all of the ports
+    map<string,jack_port_t*>::iterator it;
+    for ( it=input_ports.begin() ; it != input_ports.end(); it++ )
+        remove_in_port((*it).first);
+
+    for ( it=output_ports.begin() ; it != output_ports.end(); it++ )
+        remove_out_port((*it).first);
+
+    // Close the JACK client
     if (jack_client_close(client) != 0) {
         throw runtime_error("Unable to close JACK client");
     }
@@ -114,32 +135,42 @@ void JackClient::close()
 }
 
 
-size_t JackClient::add_audio_in_port(string name)
+void JackClient::add_audio_in_port(string name)
 {
-    return add_in_port(name, JACK_DEFAULT_AUDIO_TYPE);
+    add_in_port(name, JACK_DEFAULT_AUDIO_TYPE);
 }
-size_t JackClient::add_audio_out_port(string name)
+void JackClient::add_audio_out_port(string name)
 {
-    return add_out_port(name, JACK_DEFAULT_AUDIO_TYPE);
+    add_out_port(name, JACK_DEFAULT_AUDIO_TYPE);
 }
-size_t JackClient::add_midi_in_port(string name)
+void JackClient::add_midi_in_port(string name)
 {
-    return add_in_port(name, JACK_DEFAULT_MIDI_TYPE);
+    add_in_port(name, JACK_DEFAULT_MIDI_TYPE);
 }
-size_t JackClient::add_midi_out_port(string name)
+void JackClient::add_midi_out_port(string name)
 {
-    return add_out_port(name, JACK_DEFAULT_MIDI_TYPE);
+    add_out_port(name, JACK_DEFAULT_MIDI_TYPE);
 }
 
-size_t JackClient::add_in_port(string name, const char* type)
+void JackClient::add_in_port(string name, const char* type)
 {
+    // Make sure an input port dosn't already exist with that name
+    if (input_ports.count(name) > 0) {
+        throw runtime_error("An input port already exists with that name");
+    }
+
     jack_port_t* in_port = add_port(name.c_str(), type, JackPortIsInput);
-    input_ports.push_back(in_port);
+    input_ports[name] = in_port;
 }
-size_t JackClient::add_out_port(string name, const char* type)
+void JackClient::add_out_port(string name, const char* type)
 {
+    // Make sure an output port dosn't already exist with that name
+    if (output_ports.count(name) > 0) {
+        throw runtime_error("An output port already exists with that name");
+    }
+
     jack_port_t* out_port = add_port(name.c_str(), type, JackPortIsOutput);
-    output_ports.push_back(out_port);
+    output_ports[name] = out_port;
 }
 
 jack_port_t* JackClient::add_port(string name, const char* type, unsigned long flags)
@@ -159,6 +190,17 @@ jack_port_t* JackClient::add_port(string name, const char* type, unsigned long f
     }
 
     return port;
+}
+
+
+void JackClient::remove_in_port(string name)
+{
+    input_ports.erase(name);
+}
+
+void JackClient::remove_out_port(string name)
+{
+    output_ports.erase(name);
 }
 
 string JackClient::get_name()
