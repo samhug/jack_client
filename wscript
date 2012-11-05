@@ -19,7 +19,7 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_cxx unittest_gtest doxygen')
 
-    conf.env.CXXFLAGS = [ '-g']
+    conf.env.CXXFLAGS = ['-Wall', '-g']
     conf.define('VERSION', VERSION)
     conf.define('APPLICATION_NAME', APPLICATION_NAME)
 

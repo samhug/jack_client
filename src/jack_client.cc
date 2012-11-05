@@ -59,7 +59,7 @@ int JackClient::jack_process_callback(jack_nframes_t nframes, void *arg)
     JackClient *client = static_cast<JackClient*>(arg);
 
     // Do callback handling in the context of the client object
-    client->__process_callback(nframes);
+    return client->__process_callback(nframes);
 }
 
 int JackClient::__process_callback(jack_nframes_t nframes)
