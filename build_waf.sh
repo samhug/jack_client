@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WAF_VERSION=1.7.5
-WAF_EXTRAS=doxygen,unittest_gtest
+WAF_EXTRAS=doxygen
 
 
 WAF_PACKAGE=waf-$WAF_VERSION
@@ -20,6 +20,3 @@ cp $TEMP_DIR/$WAF_PACKAGE/waf .
 
 # Remove the temporary files
 rm -rf $TEMP_DIR
-
-# Download third-party extras
-wget http://github.com/tanakh/waf-unittest/raw/master/unittest_gtest.py

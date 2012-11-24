@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <cassert>
 
-#include "jack_client.h"
+#include "jack_client/jack_client.h"
 
 //using namespace std;
 

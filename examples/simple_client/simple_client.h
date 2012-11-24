@@ -1,7 +1,7 @@
 #ifndef SIMPLECLIENT_H
 #define SIMPLECLIENT_H
 
-#include "jack_client.h"
+#include <jack_client/jack_client.h>
 
 class SimpleClient : public JackClient
 {

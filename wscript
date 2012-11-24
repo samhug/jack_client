@@ -3,46 +3,31 @@
 
 APPLICATION_NAME='JackClient'
 
-VERSION_MAJOR = 0
-VERSION_MINOR = 0
-VERSION_REVISION = 1
-
-
-VERSION=str(VERSION_MAJOR)+'.'+str(VERSION_MINOR)+'.'+str(VERSION_REVISION)
-
 top = '.'
 out = 'build'
 
 def options(opt):
-    opt.load('compiler_cxx unittest_gtest doxygen')
+    opt.load('compiler_cxx doxygen')
 
 def configure(conf):
-    conf.load('compiler_cxx unittest_gtest doxygen')
+    conf.load('compiler_cxx doxygen')
 
-    conf.env.CXXFLAGS = ['-Wall', '-g']
-    conf.define('VERSION', VERSION)
-    conf.define('APPLICATION_NAME', APPLICATION_NAME)
+    conf.env.CXXFLAGS = ['-Wall', '-O3']
 
-    conf.check_cfg(package='jack', at_least_version='1.0.0', args='--cflags --libs', uselib_store='JACK')
-
-    conf.write_config_header('config.h')
-
+    conf.check_cfg(package='jack', args='--cflags --libs', uselib_store='JACK')
 
 def build(bld):
     
-    SOURCES_PATTERN = 'src/**.cc'
-    TESTS_PATTERN   = 'src/**/tests/**.cc'
-
     # Build library
     bld.stlib(
         features    = 'cxx',
-        source      = bld.path.ant_glob(SOURCES_PATTERN, excl=[TESTS_PATTERN]),
-        includes    = '. include',
+        source      = bld.path.ant_glob('src/**.cc'),
+        includes    = 'include',
         use         = 'JACK',
         target      = APPLICATION_NAME
     )
 
-    # Build simple_client example
+    # Build example
     bld.program(
         features = 'cxx',
         source   = bld.path.ant_glob('examples/simple_client/**.cc'),
@@ -50,16 +35,6 @@ def build(bld):
         use      = 'JackClient',
         target   = 'simple_client',
     )
-
-    '''
-    # Build tests
-    bld.program(
-        features = 'gtest',
-        source   = bld.path.ant_glob([TESTS_PATTERN, SOURCES_PATTERN]),
-        includes = './src/',
-        target   = APPLICATION_NAME+'_test',
-    )
-    '''
 
     # Generate documentation
     bld(features='doxygen', doxyfile='Doxyfile')
