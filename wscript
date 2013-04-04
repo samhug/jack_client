@@ -7,10 +7,10 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    opt.load('compiler_cxx doxygen')
+    opt.load('compiler_cxx')
 
 def configure(conf):
-    conf.load('compiler_cxx doxygen')
+    conf.load('compiler_cxx')
 
     conf.env.CXXFLAGS = ['-Wall', '-O3']
 
@@ -18,7 +18,7 @@ def configure(conf):
 
 def build(bld):
     
-    # Build library
+    # Build static library
     bld.stlib(
         features    = 'cxx',
         source      = bld.path.ant_glob('src/**.cc'),
@@ -35,6 +35,3 @@ def build(bld):
         use      = 'JackClient',
         target   = 'simple_client',
     )
-
-    # Generate documentation
-    bld(features='doxygen', doxyfile='Doxyfile')

@@ -18,7 +18,7 @@ JackClient::JackClient(string name)
 
     // Initialize the JACK client
     if ((client = jack_client_open(name.c_str(), client_options, &client_status)) == NULL) {
-        throw runtime_error("Unable to initialize the JACK client. Is the server running?");
+        throw runtime_error("Unable to initialize the JACK client. (Make sure there is a JACK server running)");
     }
     if (client_status & JackServerStarted) {
         cerr << "JACK server started" << endl;
